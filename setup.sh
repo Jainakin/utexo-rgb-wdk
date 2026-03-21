@@ -96,9 +96,17 @@ echo ""
 echo "🍎 Running Expo prebuild for iOS..."
 npx expo prebuild --platform ios 2>&1 | tail -5
 
+# ── Step 7: Link native addons ────────────────────────────────────────────
+# bare-link creates xcframeworks from prebuild binaries for all native
+# bare addons. This must run before pod install so CocoaPods vendors them.
+echo ""
+echo "🔗 Linking native addons (creating xcframeworks)..."
+node node_modules/react-native-bare-kit/ios/link.js
+echo "  ✓ $(ls node_modules/react-native-bare-kit/ios/addons/*.xcframework 2>/dev/null | wc -l | tr -d ' ') xcframeworks created"
+
 echo ""
 echo "📲 Installing CocoaPods..."
-cd ios && pod install 2>&1 | tail -5 && cd ..
+cd ios && LANG=en_US.UTF-8 pod install 2>&1 | tail -5 && cd ..
 
 # ── Done ────────────────────────────────────────────────────────────────────
 echo ""
