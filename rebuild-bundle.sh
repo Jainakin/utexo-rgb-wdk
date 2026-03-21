@@ -2,12 +2,15 @@
 set -euo pipefail
 
 # ============================================================================
-# Rebuild the worklet bundle after source changes
+# Rebuild the worklet bundle from the app's dependency tree
 #
-# Run this after modifying any of:
-#   - pear-wrk-wdk/src/wdk-worklet.js
-#   - pear-wrk-wdk/src/wdk-core/wdk-manager.js
-#   - pear-wrk-wdk/spec/hrpc/*
+# This ensures linked native addon versions in the bundle match exactly
+# what bare-link creates as xcframeworks for iOS. Without this, version
+# mismatches cause ADDON_NOT_FOUND errors at runtime.
+#
+# Run this after:
+#   - npm install (dependency version changes)
+#   - Modifying pear-wrk-wdk source files
 # ============================================================================
 
 APP_DIR="${1:-app}"
@@ -19,19 +22,25 @@ if [ ! -d "$APP_DIR/node_modules/@tetherto/pear-wrk-wdk" ]; then
 fi
 
 WDK_DIR="$APP_DIR/node_modules/@tetherto/pear-wrk-wdk"
+PROVIDER_DIR="$APP_DIR/node_modules/@tetherto/wdk-react-native-provider"
 
-echo "📦 Rebuilding worklet bundle..."
-cd "$WDK_DIR"
-npx bare-pack --host ios-arm64 --linked --imports ./pack.imports.json \
-  --out bundle/wdk-worklet.mobile.bundle.js src/wdk-worklet.js
+echo "📦 Rebuilding worklet bundle from app's dependency tree..."
 
-SIZE=$(ls -lh bundle/wdk-worklet.mobile.bundle.js | awk '{print $5}')
+# Build from app root so module resolution uses app's node_modules
+cd "$APP_DIR"
+npx bare-pack --host ios-arm64 --linked \
+  --imports "$WDK_DIR/pack.imports.json" \
+  --out "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+  "$WDK_DIR/src/wdk-worklet.js"
+
+SIZE=$(ls -lh "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" | awk '{print $5}')
 echo "  ✓ Bundle rebuilt ($SIZE)"
 
 # Deploy to provider
-PROVIDER_DIR="$APP_DIR/node_modules/@tetherto/wdk-react-native-provider"
-cp bundle/wdk-worklet.mobile.bundle.js "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
-cp bundle/wdk-worklet.mobile.bundle.js "$PROVIDER_DIR/src/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
+cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+   "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
+cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+   "$PROVIDER_DIR/src/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
 
 echo "  ✓ Bundle deployed to provider"
 echo ""

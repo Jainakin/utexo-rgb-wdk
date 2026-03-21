@@ -48,6 +48,9 @@ cd "$APP_DIR"
 npm install
 
 # ── Step 4: Verify critical files ───────────────────────────────────────────
+# Note: npm overrides in package.json ensure bare package versions match
+# the pre-built worklet bundle's linked addon versions, so bare-link
+# creates matching xcframeworks. No bundle rebuild needed.
 echo ""
 echo "🔍 Verifying installation..."
 
