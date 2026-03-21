@@ -47,13 +47,30 @@ echo "📥 Installing dependencies (this downloads ~600MB of native binaries)...
 cd "$APP_DIR"
 npm install
 
-# ── Step 4: Rebuild secret manager bundle ─────────────────────────────────
-# The secret manager bundle ships pre-built in wdk-react-native-provider
-# with old addon versions. Rebuild it so its linked addon refs match
-# the current versions installed via npm overrides.
+# ── Step 4: Rebuild worklet bundles ───────────────────────────────────────
+# Both bundles ship pre-built with addon versions from the dev machine.
+# Rebuild them from the app's node_modules so linked addon refs match
+# the actual installed versions (pinned by npm overrides).
 echo ""
-echo "🔄 Rebuilding secret manager bundle (matching addon versions)..."
+echo "🔄 Rebuilding worklet bundles (matching addon versions)..."
+WDK_DIR="node_modules/@tetherto/pear-wrk-wdk"
 PROVIDER_DIR="node_modules/@tetherto/wdk-react-native-provider"
+
+# Rebuild WDK main bundle
+npx bare-pack \
+  --host ios-arm64 \
+  --linked \
+  --imports "$WDK_DIR/pack.imports.json" \
+  --out "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+  "$WDK_DIR/src/wdk-worklet.js"
+# Deploy to provider locations
+cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+   "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
+cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
+   "$PROVIDER_DIR/src/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
+echo "  ✓ WDK worklet bundle rebuilt"
+
+# Rebuild secret manager bundle
 npx bare-pack \
   --host ios-arm64 \
   --linked \
