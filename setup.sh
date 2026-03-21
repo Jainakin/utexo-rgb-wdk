@@ -47,10 +47,22 @@ echo "📥 Installing dependencies (this downloads ~600MB of native binaries)...
 cd "$APP_DIR"
 npm install
 
-# ── Step 4: Verify critical files ───────────────────────────────────────────
-# Note: npm overrides in package.json ensure bare package versions match
-# the pre-built worklet bundle's linked addon versions, so bare-link
-# creates matching xcframeworks. No bundle rebuild needed.
+# ── Step 4: Rebuild secret manager bundle ─────────────────────────────────
+# The secret manager bundle ships pre-built in wdk-react-native-provider
+# with old addon versions. Rebuild it so its linked addon refs match
+# the current versions installed via npm overrides.
+echo ""
+echo "🔄 Rebuilding secret manager bundle (matching addon versions)..."
+PROVIDER_DIR="node_modules/@tetherto/wdk-react-native-provider"
+npx bare-pack \
+  --target ios-arm64 --target ios-arm64-simulator \
+  --target android-arm64 \
+  --linked \
+  --out "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js" \
+  "$PROVIDER_DIR/src/worklet/wdk-secret-manager-worklet.js"
+echo "  ✓ Secret manager bundle rebuilt"
+
+# ── Step 5: Verify critical files ───────────────────────────────────────────
 echo ""
 echo "🔍 Verifying installation..."
 
@@ -77,7 +89,7 @@ if [ $ERRORS -gt 0 ]; then
   exit 1
 fi
 
-# ── Step 5: iOS prebuild ────────────────────────────────────────────────────
+# ── Step 6: iOS prebuild ────────────────────────────────────────────────────
 echo ""
 echo "🍎 Running Expo prebuild for iOS..."
 npx expo prebuild --platform ios 2>&1 | tail -5

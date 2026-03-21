@@ -43,5 +43,23 @@ cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
    "$PROVIDER_DIR/src/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
 
 echo "  ✓ Bundle deployed to provider"
+
+# ── Also rebuild the secret manager bundle ──────────────────────────────
+# The secret manager bundle ships pre-built in wdk-react-native-provider
+# with pinned addon versions. When npm overrides change addon versions,
+# this bundle must be rebuilt to match.
+echo ""
+echo "📦 Rebuilding secret manager bundle..."
+
+npx bare-pack \
+  --target ios-arm64 --target ios-arm64-simulator \
+  --target android-arm64 \
+  --linked \
+  --out "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js" \
+  "$PROVIDER_DIR/src/worklet/wdk-secret-manager-worklet.js"
+
+SM_SIZE=$(ls -lh "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js" | awk '{print $5}')
+echo "  ✓ Secret manager bundle rebuilt ($SM_SIZE)"
+
 echo ""
 echo "  Now rebuild the app: cd $APP_DIR && npx expo run:ios"
