@@ -52,8 +52,7 @@ echo ""
 echo "📦 Rebuilding secret manager bundle..."
 
 npx bare-pack \
-  --target ios-arm64 --target ios-arm64-simulator \
-  --target android-arm64 \
+  --host ios-arm64 \
   --linked \
   --out "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js" \
   "$PROVIDER_DIR/src/worklet/wdk-secret-manager-worklet.js"
