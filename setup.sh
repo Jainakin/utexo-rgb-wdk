@@ -48,29 +48,14 @@ cd "$APP_DIR"
 npm install
 
 # ── Step 4: Rebuild worklet bundles ───────────────────────────────────────
-# Both bundles ship pre-built with hardcoded addon version refs. Rebuilding
-# them from the app's node_modules ensures linked addon refs match exactly
-# what bare-link creates as xcframeworks. Without this, version mismatches
-# cause ADDON_NOT_FOUND errors at runtime.
+# The WDK main bundle ships pre-built in pear-wrk-wdk with addon version
+# refs that match the npm overrides in package.json — no rebuild needed.
+# The secret manager bundle ships in wdk-react-native-provider with OLD
+# addon versions, so it MUST be rebuilt to match the current overrides.
 echo ""
-WDK_DIR="node_modules/@tetherto/pear-wrk-wdk"
 PROVIDER_DIR="node_modules/@tetherto/wdk-react-native-provider"
 
-echo "🔄 Rebuilding WDK worklet bundle..."
-npx bare-pack \
-  --host ios-arm64 \
-  --linked \
-  --imports "$WDK_DIR/pack.imports.json" \
-  --out "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
-  "$WDK_DIR/src/wdk-worklet.js"
-# Deploy to provider locations
-cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
-   "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
-cp "$WDK_DIR/bundle/wdk-worklet.mobile.bundle.js" \
-   "$PROVIDER_DIR/src/services/wdk-service/wdk-worklet.mobile.bundle.js" 2>/dev/null || true
-echo "  ✓ WDK bundle rebuilt and deployed"
-
-echo "🔄 Rebuilding secret manager bundle..."
+echo "🔄 Rebuilding secret manager bundle (matching addon versions)..."
 npx bare-pack \
   --host ios-arm64 \
   --linked \
