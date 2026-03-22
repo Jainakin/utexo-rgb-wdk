@@ -56,11 +56,69 @@ This umbrella repo provides setup scripts. The actual code lives in these forks:
 
 ## Prerequisites
 
-- macOS with Xcode (iOS SDK)
-- Node.js 20+
-- `gh` CLI (for binary downloads)
-- iOS device or simulator
-- WDK Indexer API key
+- **macOS** with Xcode 15+ and iOS SDK (for iOS builds)
+- **Node.js 20+** and npm
+- **CocoaPods** (`brew install cocoapods`)
+- **`gh` CLI** (`brew install gh`) — authenticated, for binary downloads from GitHub Releases
+- iOS Simulator or physical device
+- WDK Indexer API key (get from WDK/Tether team)
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your API key:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `WDK_INDEXER_API_KEY` | Yes | API key for the WDK indexer service |
+
+The app also reads RGB-specific config from the embedded `.env` in the app repo (network, indexer URL, transport endpoint). These are pre-configured for mainnet.
+
+## How It Works
+
+### setup.sh
+
+1. Clones `wdk-starter-react-native` into `app/`
+2. Copies `.env` into the app
+3. Runs `npm install` (downloads ~600MB of pre-built native binaries from GitHub Releases)
+4. Rebuilds both JS worklet bundles (WDK + secret manager) so native addon version refs match the installed packages
+5. Runs `expo prebuild` for iOS
+6. Runs `bare-link` to create xcframeworks from native addon prebuilds
+7. Runs `pod install`
+
+### Making Changes
+
+After modifying source code in any of the dependency repos:
+
+```bash
+# Rebuild worklet bundles (picks up changes to pear-wrk-wdk, wdk-wallet-rgb, rgb-sdk)
+./rebuild-bundle.sh
+
+# Then rebuild the app
+cd app && npx expo run:ios
+```
+
+### Building Native Libraries from Source
+
+Only needed if modifying `rgb-lib-bare` C++ bindings or the Rust FFI layer. Requires Rust toolchain.
+
+```bash
+./build-libs.sh ios        # Cross-compile for iOS
+./build-libs.sh prebuilds  # Build .bare prebuilds
+./build-libs.sh release    # Upload to GitHub Release
+```
+
+## Troubleshooting
+
+| Issue | Fix |
+|-------|-----|
+| `pod install` UTF-8 error | `export LANG=en_US.UTF-8` before running |
+| ADDON_NOT_FOUND at runtime | Run `./rebuild-bundle.sh` to realign bundle addon refs |
+| `gh` auth error during npm install | Run `gh auth login` first |
+| Xcode build fails on signing | Open `app/ios/*.xcworkspace` in Xcode, set your team |
 
 ## Architecture
 
