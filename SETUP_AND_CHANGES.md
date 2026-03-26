@@ -72,7 +72,7 @@ This is the core worklet orchestrator — the bare JavaScript runtime that handl
 - All 39 methods follow the existing pattern: `wdk-manager.js` gets an account via `this.getAccount('rgb', accountIndex)` then calls `account.methodName()`
 - The worklet bundle is pre-built and shipped in the repo (not rebuilt on `npm install`) — npm overrides in the app's `package.json` ensure bare addon versions match the bundle's linked refs
 
-### 2. `tetherto/wdk-starter-react-native` → `Jainakin/wdk-starter-react-native`
+### 2. `tetherto/wdk-starter-react-native` → `Jainakin/wdk-starter-react-native(branch - rgb-wdk-integration)`
 
 **Branch:** `rgb-wdk-integration` (20 commits ahead of upstream)
 
