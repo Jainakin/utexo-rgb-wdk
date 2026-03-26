@@ -51,7 +51,7 @@ npx expo run:android
 
 ## Changes to Tether's Repos
 
-### 1. `tetherto/pear-wrk-wdk` → `Jainakin/pear-wrk-wdk`
+### 1. `tetherto/pear-wrk-wdk` → `Jainakin/pear-wrk-wdk(branch - rgb-wdk-integration)`
 
 **Branch:** `rgb-wdk-integration` (20 commits ahead of upstream)
 
