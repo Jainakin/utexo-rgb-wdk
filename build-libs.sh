@@ -50,7 +50,7 @@ if [ "$MODE" = "release" ]; then
   echo ""
   echo "📤 Uploading to GitHub Release..."
   VERSION=$(node -p "require('$RGB_LIB_BARE/package.json').version")
-  REPO="Jainakin/rgb-lib-bare"
+  REPO="UTEXO-Protocol/rgb-lib-bare"
 
   gh release create "v$VERSION" --repo "$REPO" --title "v$VERSION" --notes "Pre-built binaries" 2>/dev/null || true
 

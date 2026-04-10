@@ -11,13 +11,13 @@ Last known working state. All repos verified: fresh clone → `./setup.sh` → `
 | **pear-wrk-wdk** | `rgb-wdk-integration` | `e0d6ec4` | https://github.com/Jainakin/pear-wrk-wdk/tree/e0d6ec4 |
 | **wdk-wallet-rgb** | `rgb-wdk-integration` | `d90dbde` | https://github.com/Jainakin/wdk-wallet-rgb/tree/d90dbde |
 | **rgb-sdk** | `rgb-wdk-integration` | `0b5eb19` | https://github.com/Jainakin/rgb-sdk/tree/0b5eb19 |
-| **rgb-lib-bare** | `main` | `cfe0a85` | https://github.com/Jainakin/rgb-lib-bare/tree/cfe0a85 |
+| **rgb-lib-bare** | `main` | `cfe0a85` | https://github.com/UTEXO-Protocol/rgb-lib-bare/tree/cfe0a85 |
 
 ## GitHub Release (Binary Assets)
 
-**Repo:** `Jainakin/rgb-lib-bare`
+**Repo:** `UTEXO-Protocol/rgb-lib-bare`
 **Tag:** `v0.3.0-beta.13`
-**URL:** https://github.com/Jainakin/rgb-lib-bare/releases/tag/v0.3.0-beta.13
+**URL:** https://github.com/UTEXO-Protocol/rgb-lib-bare/releases/tag/v0.3.0-beta.13
 
 | Asset | Platform | Type |
 |-------|----------|------|
@@ -60,7 +60,7 @@ utexo-rgb-wdk (umbrella)
             ├── @tetherto/pear-wrk-wdk  → Jainakin/pear-wrk-wdk#e0d6ec4
             │    └── @utexo/wdk-wallet-rgb → Jainakin/wdk-wallet-rgb#d90dbde
             │         └── @utexo/rgb-sdk   → Jainakin/rgb-sdk#0b5eb19
-            ├── @utexo/rgb-lib-bare     → Jainakin/rgb-lib-bare#cfe0a85
+            ├── @utexo/rgb-lib-bare     → UTEXO-Protocol/rgb-lib-bare#cfe0a85
             │    └── postinstall: download-libs.sh fetches binaries from GitHub Release
             └── @tetherto/wdk-secret-manager → npm (^1.0.0-beta.3)
 ```

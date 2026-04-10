@@ -40,7 +40,7 @@ This umbrella repo provides setup scripts. The actual code lives in these forks:
 
 | Repo | What | Changes |
 |------|------|---------|
-| [rgb-lib-bare](https://github.com/Jainakin/rgb-lib-bare) | Bare native addon (C++ → Rust FFI) | **New repo** |
+| [rgb-lib-bare](https://github.com/UTEXO-Protocol/rgb-lib-bare) | Bare native addon (C++ → Rust FFI) | **New repo** |
 | [pear-wrk-wdk](https://github.com/Jainakin/pear-wrk-wdk) | HRPC spec + worklet handlers | +3,500 lines on `rgb-wdk-integration` |
 | [wdk-wallet-rgb](https://github.com/Jainakin/wdk-wallet-rgb) | RGB wallet account logic | Modified on `rgb-wdk-integration` |
 | [rgb-sdk](https://github.com/Jainakin/rgb-sdk) | RGB SDK (TypeScript) | Bare compat fixes on `rgb-wdk-integration` |
