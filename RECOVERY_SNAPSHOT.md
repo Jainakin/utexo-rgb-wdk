@@ -1,51 +1,52 @@
-# Recovery Snapshot — 2026-03-22
+# Recovery Snapshot — 2026-04-14
 
-Last known working state. All repos verified: fresh clone → `./setup.sh` → `npx expo run:ios` → app launches, RGB init works.
+Last known working state. Fresh clone + `./setup.sh` + `npx expo run:ios` verified.
+
+## Architecture
+
+- No `@utexo/rgb-sdk` fork — replaced with `@utexo/rgb-sdk-core` (npm) + `BareRgbLibBinding`
+- Lightning/bridge methods removed per team guidance
+- `rgbSendBtcBegin/End` removed (C FFI functions removed in rgb-lib dev branch)
+- 47 HRPC methods, 39 tests passing in wdk-wallet-rgb
 
 ## Repos & Commits
 
 | Repo | Branch | Commit | URL |
 |------|--------|--------|-----|
-| **utexo-rgb-wdk** (umbrella) | `main` | `73ce54f` | https://github.com/Jainakin/utexo-rgb-wdk/tree/73ce54f |
-| **wdk-starter-react-native** | `rgb-wdk-integration` | `f15b9d4` | https://github.com/Jainakin/wdk-starter-react-native/tree/f15b9d4 |
-| **pear-wrk-wdk** | `rgb-wdk-integration` | `e0d6ec4` | https://github.com/Jainakin/pear-wrk-wdk/tree/e0d6ec4 |
-| **wdk-wallet-rgb** | `rgb-wdk-integration` | `d90dbde` | https://github.com/Jainakin/wdk-wallet-rgb/tree/d90dbde |
-| **rgb-sdk** | `rgb-wdk-integration` | `0b5eb19` | https://github.com/Jainakin/rgb-sdk/tree/0b5eb19 |
-| **rgb-lib-bare** | `main` | `cfe0a85` | https://github.com/UTEXO-Protocol/rgb-lib-bare/tree/cfe0a85 |
+| **utexo-rgb-wdk** (umbrella) | `main` | `1f5fc52` | https://github.com/Jainakin/utexo-rgb-wdk |
+| **wdk-starter-react-native** | `rgb-wdk-integration` | `7d987d6` | https://github.com/Jainakin/wdk-starter-react-native/tree/rgb-wdk-integration |
+| **pear-wrk-wdk** | `rgb-wdk-integration` | `56e2bde` | https://github.com/Jainakin/pear-wrk-wdk/tree/rgb-wdk-integration |
+| **wdk-wallet-rgb** | `rgb-wdk-integration` | `10907e7` | https://github.com/Jainakin/wdk-wallet-rgb/tree/rgb-wdk-integration |
+| **rgb-lib-bare** | `main` | `36c83a1` | https://github.com/UTEXO-Protocol/rgb-lib-bare |
+
+Note: `Jainakin/rgb-sdk` fork is **no longer used**. Dependency eliminated in favor of `@utexo/rgb-sdk-core` from npm.
 
 ## GitHub Release (Binary Assets)
 
 **Repo:** `UTEXO-Protocol/rgb-lib-bare`
-**Tag:** `v0.3.0-beta.13`
-**URL:** https://github.com/UTEXO-Protocol/rgb-lib-bare/releases/tag/v0.3.0-beta.13
+**Tag:** `v0.3.0-beta.15`
+**URL:** https://github.com/UTEXO-Protocol/rgb-lib-bare/releases/tag/v0.3.0-beta.15
 
-| Asset | Platform | Type |
-|-------|----------|------|
-| `librgblibcffi-ios-arm64.a` | iOS device | Static lib (136MB) |
-| `librgblibcffi-ios-arm64-simulator.a` | iOS simulator (ARM) | Static lib |
-| `librgblibcffi-ios-x64-simulator.a` | iOS simulator (Intel) | Static lib |
-| `librgblibcffi-android-arm64.a` | Android arm64 | Static lib |
-| `librgblibcffi-darwin-arm64.a` | macOS (dev builds) | Static lib |
-| `utexo__rgb-lib-bare-ios-arm64.bare` | iOS device | Bare addon prebuild |
-| `utexo__rgb-lib-bare-ios-arm64-simulator.bare` | iOS simulator (ARM) | Bare addon prebuild |
-| `utexo__rgb-lib-bare-ios-x64-simulator.bare` | iOS simulator (Intel) | Bare addon prebuild |
-| `utexo__rgb-lib-bare-darwin-arm64.bare` | macOS | Bare addon prebuild |
+16 assets (8 static libs + 8 prebuilds):
+
+| Platform | Static lib | Prebuild |
+|----------|-----------|----------|
+| iOS arm64 (device) | librgblibcffi-ios-arm64.a | utexo__rgb-lib-bare-ios-arm64.bare |
+| iOS arm64 (sim) | librgblibcffi-ios-arm64-simulator.a | utexo__rgb-lib-bare-ios-arm64-simulator.bare |
+| iOS x64 (sim) | librgblibcffi-ios-x64-simulator.a | utexo__rgb-lib-bare-ios-x64-simulator.bare |
+| macOS arm64 | librgblibcffi-darwin-arm64.a | utexo__rgb-lib-bare-darwin-arm64.bare |
+| Android arm64 | librgblibcffi-android-arm64.a | utexo__rgb-lib-bare-android-arm64.bare |
+| Android arm | librgblibcffi-android-arm.a | utexo__rgb-lib-bare-android-arm.bare |
+| Android x64 | librgblibcffi-android-x64.a | utexo__rgb-lib-bare-android-x64.bare |
+| Android ia32 | librgblibcffi-android-ia32.a | utexo__rgb-lib-bare-android-ia32.bare |
 
 ## How to Restore
 
 ```bash
-# 1. Clone umbrella at this exact commit
 git clone https://github.com/Jainakin/utexo-rgb-wdk.git
 cd utexo-rgb-wdk
-git checkout 73ce54f
-
-# 2. Add your .env
 echo "WDK_INDEXER_API_KEY=<your-key>" > .env
-
-# 3. Run setup (clones app at the pinned commit, installs deps, rebuilds bundles, runs pod install)
 ./setup.sh
-
-# 4. Build & run
 cd app
 export LANG=en_US.UTF-8
 npx expo run:ios
@@ -57,17 +58,18 @@ npx expo run:ios
 utexo-rgb-wdk (umbrella)
   └── setup.sh clones → wdk-starter-react-native (the React Native app)
        └── package.json deps:
-            ├── @tetherto/pear-wrk-wdk  → Jainakin/pear-wrk-wdk#e0d6ec4
-            │    └── @utexo/wdk-wallet-rgb → Jainakin/wdk-wallet-rgb#d90dbde
-            │         └── @utexo/rgb-sdk   → Jainakin/rgb-sdk#0b5eb19
-            ├── @utexo/rgb-lib-bare     → UTEXO-Protocol/rgb-lib-bare#cfe0a85
-            │    └── postinstall: download-libs.sh fetches binaries from GitHub Release
+            ├── @tetherto/pear-wrk-wdk  → Jainakin/pear-wrk-wdk
+            │    └── @utexo/wdk-wallet-rgb → Jainakin/wdk-wallet-rgb
+            │         ├── @utexo/rgb-sdk-core → npm (1.0.0-beta.3)
+            │         └── @utexo/rgb-lib-bare → UTEXO-Protocol/rgb-lib-bare
+            │              └── postinstall: download-libs.sh fetches from GitHub Release
             └── @tetherto/wdk-secret-manager → npm (^1.0.0-beta.3)
 ```
 
-## Key Notes
+## Open PRs
 
-- **npm overrides** in `wdk-starter-react-native/package.json` pin 18 bare addon versions to match the pre-built WDK worklet bundle
-- **Secret manager bundle** is rebuilt during `setup.sh` via `bare-pack` to match current addon versions
-- **WDK main bundle** is NOT rebuilt (uses pre-built from pear-wrk-wdk) — rebuilding fails because bare-pack traverses unrelated TON/EVM deps
-- **Native binaries** (135MB static libs) are downloaded from GitHub Release, never built on developer machines
+| PR | Repo | Status |
+|---|---|---|
+| #7 | UTEXO-Protocol/rgb-sdk-core | Waiting approval (lint fixed) |
+| #3 | UTEXO-Protocol/wdk-wallet-rgb | Waiting branch naming decision |
+| #12 | UTEXO-Protocol/rgb-lib-nodejs | Waiting review |
