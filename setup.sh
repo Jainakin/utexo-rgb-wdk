@@ -47,21 +47,44 @@ echo "📥 Installing dependencies (this downloads ~600MB of native binaries)...
 cd "$APP_DIR"
 npm install
 
-# ── Step 4: Rebuild worklet bundles ───────────────────────────────────────
-# The WDK main bundle ships pre-built in pear-wrk-wdk with addon version
-# refs that match the npm overrides in package.json — no rebuild needed.
+# ── Step 4: Rebuild worklet bundles (multi-platform) ───────────────────────
+# The WDK main bundle ships pre-built in pear-wrk-wdk with both iOS and
+# Android addon refs — no rebuild needed.
 # The secret manager bundle ships in wdk-react-native-provider with OLD
-# addon versions, so it MUST be rebuilt to match the current overrides.
+# addon versions, so it MUST be rebuilt for both platforms.
 echo ""
 PROVIDER_DIR="node_modules/@tetherto/wdk-react-native-provider"
+SM_SRC="$PROVIDER_DIR/src/worklet/wdk-secret-manager-worklet.js"
+SM_OUT="$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js"
 
-echo "🔄 Rebuilding secret manager bundle (matching addon versions)..."
-npx bare-pack \
-  --host ios-arm64 \
-  --linked \
-  --out "$PROVIDER_DIR/lib/module/services/wdk-service/wdk-secret-manager-worklet.bundle.js" \
-  "$PROVIDER_DIR/src/worklet/wdk-secret-manager-worklet.js"
-echo "  ✓ Secret manager bundle rebuilt"
+echo "🔄 Rebuilding secret manager bundle (iOS + Android)..."
+npx bare-pack --host ios-arm64 --linked --out /tmp/_sm_ios.bundle "$SM_SRC"
+npx bare-pack --host android-arm64 --linked --out /tmp/_sm_android.bundle "$SM_SRC"
+
+# Merge iOS + Android bundles into one multi-platform bundle
+node -e '
+const fs = require("fs");
+function parse(p) {
+  const r = fs.readFileSync(p, "utf8");
+  const n1 = r.indexOf("\n"), n2 = r.indexOf("\n", n1+1);
+  return { meta: JSON.parse(r.substring(n1+1, n2)), code: r.substring(n2+1) };
+}
+const ios = parse("/tmp/_sm_ios.bundle"), android = parse("/tmp/_sm_android.bundle");
+const m = JSON.parse(JSON.stringify(ios.meta));
+m.addons = [...new Set([...ios.meta.addons, ...android.meta.addons])];
+for (const k of Object.keys(ios.meta.resolutions)) {
+  if (JSON.stringify(ios.meta.resolutions[k]) !== JSON.stringify(android.meta.resolutions[k])) {
+    m.resolutions[k] = { ...ios.meta.resolutions[k] };
+    m.resolutions[k]["."] = { ios: ios.meta.resolutions[k]["."], android: android.meta.resolutions[k]["."] };
+  }
+}
+const j = JSON.stringify(m), len = 1 + Buffer.byteLength(j, "utf8") + 1;
+const raw = len + "\n" + j + "\n" + ios.code;
+const esc = raw.replace(/\\/g,"\\\\").replace(/"/g,"\\\x22").replace(/\r/g,"\\r").replace(/\n/g,"\\n");
+fs.writeFileSync(process.argv[1], "module.exports = \"" + esc + "\"");
+' "$SM_OUT"
+rm -f /tmp/_sm_ios.bundle /tmp/_sm_android.bundle
+echo "  ✓ Secret manager bundle rebuilt (multi-platform)"
 
 # ── Step 5: Verify critical files ───────────────────────────────────────────
 echo ""
@@ -80,6 +103,7 @@ check_file() {
 
 check_file "node_modules/@utexo/rgb-lib-bare/lib/ios-arm64/librgblibcffi.a" "RGB static lib (iOS arm64)"
 check_file "node_modules/@utexo/rgb-lib-bare/prebuilds/ios-arm64/utexo__rgb-lib-bare.bare" "Bare addon prebuild (iOS arm64)"
+check_file "node_modules/@utexo/rgb-lib-bare/prebuilds/android-arm64/utexo__rgb-lib-bare.bare" "Bare addon prebuild (Android arm64)"
 check_file "node_modules/@tetherto/pear-wrk-wdk/bundle/wdk-worklet.mobile.bundle.js" "Worklet bundle"
 check_file "node_modules/@tetherto/wdk-react-native-provider/lib/module/services/wdk-service/wdk-worklet.mobile.bundle.js" "Bundle deployed to provider"
 check_file "node_modules/@tetherto/pear-wrk-wdk/spec/hrpc/index.js" "HRPC spec"
@@ -90,12 +114,16 @@ if [ $ERRORS -gt 0 ]; then
   exit 1
 fi
 
-# ── Step 6: iOS prebuild ────────────────────────────────────────────────────
+# ── Step 6: Expo prebuild ──────────────────────────────────────────────────
 echo ""
 echo "🍎 Running Expo prebuild for iOS..."
 npx expo prebuild --platform ios 2>&1 | tail -5
 
-# ── Step 7: Link native addons ────────────────────────────────────────────
+echo ""
+echo "🤖 Running Expo prebuild for Android..."
+npx expo prebuild --platform android 2>&1 | tail -5
+
+# ── Step 7: Link native addons (iOS) ────────────────────────────────────────
 # bare-link creates xcframeworks from prebuild binaries for all native
 # bare addons. This must run before pod install so CocoaPods vendors them.
 echo ""
@@ -115,8 +143,8 @@ echo "  ╚═══════════════════════
 echo ""
 echo "  Next steps:"
 echo "    cd app"
-echo "    npx expo run:ios          # Build and run on iOS simulator"
-echo "    npx expo run:ios --device # Build and run on physical device"
+echo "    npx expo run:ios              # Build and run on iOS simulator"
+echo "    npx expo run:android          # Build and run on Android emulator"
 echo ""
 echo "  In the app:"
 echo "    1. Create or import a wallet"
