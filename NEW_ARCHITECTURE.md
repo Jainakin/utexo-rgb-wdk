@@ -22,15 +22,18 @@ under that model. For the full method surface, see
 | `@tetherto/wdk-worklet-bundler` | `1.0.0-beta.3` | CLI bundler |
 | `@tetherto/wdk-react-native-core` | `1.0.0-beta.8` | `<WdkAppProvider>` + hooks |
 | `@tetherto/wdk-secret-manager` | `1.0.0-beta.3` | Secure seed storage |
-| `@utexo/wdk-wallet-rgb` | `#80995f9` (git) | RGB wallet (this integration) |
+| `@utexo/rgb-sdk-core` | `1.0.0-beta.4` | Shared RGB SDK core (bare-compatible) |
+| `@utexo/rgb-lib-bare` | `0.3.0-beta.18` | Native addon (prebuilds fetched via postinstall from GitHub Releases) |
+| `@utexo/wdk-wallet-rgb` | `#ff73e9c` (git) | RGB wallet (this integration) |
 
-`@utexo/wdk-wallet-rgb` will publish to npm once PRs
-[rgb-sdk-core#7](https://github.com/UTEXO-Protocol/rgb-sdk-core/pull/7)
-and
-[rgb-lib#26](https://github.com/UTEXO-Protocol/rgb-lib/pull/26)
-land and we cut a new `rgb-lib-bare` release. Until then, a git-URL pin
-to `Jainakin/wdk-wallet-rgb#80995f9` (PR
-[#4](https://github.com/UTEXO-Protocol/wdk-wallet-rgb/pull/4)) is fine.
+Both upstream unblocks ([rgb-sdk-core#7](https://github.com/UTEXO-Protocol/rgb-sdk-core/pull/7)
+and [rgb-lib#26](https://github.com/UTEXO-Protocol/rgb-lib/pull/26))
+have merged and shipped to npm. `@utexo/wdk-wallet-rgb` itself is still
+consumed via a git pin
+(`Jainakin/wdk-wallet-rgb#ff73e9c`, PR
+[#4](https://github.com/UTEXO-Protocol/wdk-wallet-rgb/pull/4)) until we
+decide to cut an npm release — every transitive dep in its tree is now
+npm-resolved.
 
 ---
 
@@ -58,7 +61,7 @@ npm i \
   @tetherto/wdk-react-native-core@^1.0.0-beta.8 \
   @tetherto/wdk-secret-manager@^1.0.0-beta.3 \
   @tetherto/wdk-wallet-btc@^1.0.0-beta.8 \
-  github:Jainakin/wdk-wallet-rgb#80995f9
+  github:Jainakin/wdk-wallet-rgb#ff73e9c
 
 npm i -D @tetherto/wdk-worklet-bundler@^1.0.0-beta.3
 
@@ -75,6 +78,18 @@ artifact containing iOS `.framework` and Android `.so` native addons.
 import { WdkAppProvider } from '@tetherto/wdk-react-native-core'
 import bundle from './.wdk-bundle/wdk-worklet.bundle.js'
 
+import { Paths } from 'expo-file-system'
+
+// rgb-lib stores its SQLite state under `dataDir` — UTXO allocations,
+// asset metadata, in-flight transfers. Losing this directory loses all
+// RGB asset balances (the seed still derives the right addresses but
+// rgb-lib no longer knows which UTXOs are coloured). Point it at a
+// persistent, app-private path:
+//   iOS      → file:///.../Documents/
+//   Android  → file:///data/user/0/<pkg>/files/
+// Strip the `file://` prefix — rgb-lib wants a plain OS path.
+const RGB_DATA_DIR = Paths.document.uri.replace(/^file:\/\//, '') + 'rgb-wallet'
+
 export default function App() {
   return (
     <WdkAppProvider
@@ -86,7 +101,8 @@ export default function App() {
             config: {
               network: process.env.EXPO_PUBLIC_RGB_NETWORK ?? 'testnet',
               indexerUrl: process.env.EXPO_PUBLIC_RGB_INDEXER_URL ?? 'ssl://electrum.iriswallet.com:50013',
-              transportEndpoint: process.env.EXPO_PUBLIC_RGB_TRANSPORT_ENDPOINT ?? 'rpcs://rgb-proxy-testnet3.utexo.com/json-rpc'
+              transportEndpoint: process.env.EXPO_PUBLIC_RGB_TRANSPORT_ENDPOINT ?? 'rpcs://rgb-proxy-testnet3.utexo.com/json-rpc',
+              dataDir: RGB_DATA_DIR
             }
           },
           bitcoin: {
@@ -101,6 +117,12 @@ export default function App() {
   )
 }
 ```
+
+> **⚠️ `dataDir` is required.** rgb-lib uses it to persist the wallet's
+> UTXO-to-asset allocations and transfer history. `@utexo/wdk-wallet-rgb`
+> will throw at construction time if it's missing. There is no sensible
+> default: only the app knows which platform it's on and which subpath
+> its backup/retention policy should cover.
 
 ### 4. Use RGB from any component
 
@@ -174,8 +196,8 @@ docker exec tests-bitcoind-1 bitcoin-cli -regtest -rpcuser=user -rpcpassword=def
 
 ## Status of prior PRs
 
-- **UTEXO-Protocol/wdk-wallet-rgb#4** — OPEN, updated for `@tetherto/wdk-wallet@beta.7` (adds `verify()` on the read-only class) + ARCHITECTURE.md
-- **tetherto/pear-wrk-wdk#64** — CLOSED; no changes to pear-wrk-wdk are needed under the new agnostic architecture
-- **tetherto/wdk-starter-react-native#35** — CLOSED; superseded. The app-side integration is now a one-line addition to `wdk.config.js` plus the provider + hook wiring shown above
-- **UTEXO-Protocol/rgb-lib#26** — OPEN; exposes `inflate_begin/end` + `drain_to_begin/end` C-FFI entry points
-- **UTEXO-Protocol/rgb-sdk-core#7** — OPEN; adds bare-runtime default export + replaces axios with fetch
+- **UTEXO-Protocol/wdk-wallet-rgb#4** — OPEN (HEAD `ff73e9c`). All transitive deps now npm-resolved; beta.7 `verify()` on read-only; ARCHITECTURE.md included. 42 tests pass.
+- **UTEXO-Protocol/rgb-sdk-core#7** — **MERGED & PUBLISHED** as `@utexo/rgb-sdk-core@1.0.0-beta.4`. Adds `"default"` export condition (bare-runtime compatibility) + axios → fetch.
+- **UTEXO-Protocol/rgb-lib#26** — **MERGED** (merge commit `b01287e`). Exposes `inflate_begin/end` + `drain_to_begin/end` C-FFI entry points. Shipped in `@utexo/rgb-lib-bare@0.3.0-beta.18`.
+- **tetherto/pear-wrk-wdk#64** — CLOSED; no changes to pear-wrk-wdk are needed under the new agnostic architecture.
+- **tetherto/wdk-starter-react-native#35** — CLOSED; superseded. The app-side integration is now a one-line addition to `wdk.config.js` plus the provider + hook wiring shown above.
